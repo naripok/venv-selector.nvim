@@ -55,6 +55,10 @@ function M.retrieve_from_cache()
   return venv.retrieve_from_cache()
 end
 
+function M.set_venv_and_system_paths(path)
+  venv.set_venv_and_system_paths({ value = path })
+end
+
 M.hooks = {
   basedpyright = hooks.basedpyright_hook,
   pyright = hooks.pyright_hook,

@@ -3,6 +3,7 @@ local utils = require 'venv-selector.utils'
 local dbg = require('venv-selector.utils').dbg
 local mytelescope = require 'venv-selector.mytelescope'
 local config = require 'venv-selector.config'
+local lsp_util = require("lspconfig/util")
 
 local M = {}
 
@@ -325,6 +326,28 @@ function M.cache_venv(venv)
     venv_cache_json = vim.fn.json_encode(venv_cache)
   end
   vim.fn.writefile({ venv_cache_json }, config.settings.cache_file)
+end
+
+-- Automatically activate the closest venv found in current dir or parents
+function M.activate_parent_venv()
+  local name = config.settings.name
+  if type(name) == 'string' then
+    name = { name }
+  end
+
+  local project_mark = config.settings.project_mark
+  if type(project_mark) == 'string' then
+    project_mark = { project_mark }
+  end
+
+  local buf_path = vim.api.nvim_buf_get_name(0)
+
+  local python_path = utils.find_cmd_up("python", name, buf_path, project_mark)
+
+  if python_path then
+    local venv_path = lsp_util.path.dirname(lsp_util.path.dirname(python_path))
+    M.set_venv_and_system_paths({ value = venv_path })
+  end
 end
 
 return M

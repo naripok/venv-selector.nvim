@@ -4,6 +4,7 @@ local dbg = require('venv-selector.utils').dbg
 local mytelescope = require 'venv-selector.mytelescope'
 local hooks = require 'venv-selector.hooks'
 local utils = require 'venv-selector.utils'
+local autocmds = require 'venv-selector.autocmds'
 
 local M = {}
 
@@ -29,6 +30,14 @@ function M.setup(settings)
   -- Check if the user has the requirements to run VenvSelect
   if utils.fd_or_fdfind_exists() == false then
     utils.error "Missing requirement: VenvSelect needs 'fd' to be installed: https://github.com/sharkdp/fd."
+  end
+
+  -- Register autocmds to activate venvs on buf read and session load
+  if config.settings.auto_activate_parent_venv_on_buf_enter then
+    autocmds.register_on_buf_enter_autocmd()
+  end
+  if config.settings.auto_activate_parent_venv_on_persisted_load then
+    autocmds.register_on_persisted_load_post_autocmd()
   end
 end
 

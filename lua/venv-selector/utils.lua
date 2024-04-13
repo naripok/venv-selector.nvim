@@ -1,6 +1,7 @@
 local M = {}
 
 local config = require 'venv-selector.config'
+local lsp_utils = require("lspconfig/util")
 local msg_prefix = 'VenvSelect: '
 
 function M.notify(msg)
@@ -111,16 +112,18 @@ end
 function M.create_fd_search_path_string(paths)
   local search_path_string = ''
   for _, path in pairs(paths) do
-    local ishatch = path == config.settings.hatch_path
-    local expanded_path = vim.fn.expand(path)
+    if path ~= nil and path ~= '' then
+      local ishatch = path == config.settings.hatch_path
+      local expanded_path = vim.fn.expand(path)
 
-    if vim.fn.isdirectory(expanded_path) ~= 0 then
-      expanded_path = expanded_path:gsub(' ', '\\ ') -- escape space so paths can have a space
-      if ishatch == true then
-        -- special handling for hatch
-        search_path_string = search_path_string .. expanded_path .. '/*/*' .. ' '
-      else
-        search_path_string = search_path_string .. expanded_path .. ' '
+      if vim.fn.isdirectory(expanded_path) ~= 0 then
+        expanded_path = expanded_path:gsub(' ', '\\ ') -- escape space so paths can have a space
+        if ishatch == true then
+          -- special handling for hatch
+          search_path_string = search_path_string .. expanded_path .. '/*/*' .. ' '
+        else
+          search_path_string = search_path_string .. expanded_path .. ' '
+        end
       end
     end
   end
@@ -142,6 +145,56 @@ end
 --- @type fun(haystack: string, needle: string): boolean
 function M.starts_with(haystack, needle)
   return string.sub(haystack, 1, string.len(needle)) == needle
+end
+
+--- Finds the command in the list of prefixes
+--- Traverse parents until a command is found
+--- Stops at a given parent if a stop_at_marks is found there
+--- For example, you can specify stop_at_marks = { ".git", "pyproject.toml" }
+--- @type fun(cmd: string, name: table, start_from: string, stop_at_marks: table): string
+function M.find_cmd_up(cmd, prefixes, start_from, stop_at_marks)
+  local path = lsp_utils.path
+
+  if type(prefixes) == "string" then
+    prefixes = { prefixes }
+  end
+
+  local found
+  for _, prefix in ipairs(prefixes) do
+    local full_cmd = prefix and path.join(prefix, path.join("bin", cmd)) or cmd
+    local possibility
+
+    -- if start_from is a dir, test it first since transverse will start from its parent
+    if start_from and path.is_dir(start_from) then
+      possibility = path.join(start_from, full_cmd)
+      if vim.fn.executable(possibility) > 0 then
+        found = possibility
+        break
+      end
+    end
+
+    path.traverse_parents(start_from, function(dir)
+      possibility = path.join(dir, full_cmd)
+      if vim.fn.executable(possibility) > 0 then
+        found = possibility
+        return true
+      end
+      if stop_at_marks then
+        for _, mark in ipairs(stop_at_marks) do
+          if path.is_file(path.join(dir, mark))
+            or path.is_dir(path.join(dir, mark)) then
+            return true
+          end
+        end
+      end
+    end)
+
+    if found ~= nil then
+      break
+    end
+  end
+
+  return found
 end
 
 return M

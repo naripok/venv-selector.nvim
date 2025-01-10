@@ -147,6 +147,35 @@ function M.starts_with(haystack, needle)
   return string.sub(haystack, 1, string.len(needle)) == needle
 end
 
+local iswin = vim.loop.os_uname().version:match 'Windows'
+
+local function is_fs_root(path)
+    if iswin then
+      return path:match '^%a:$'
+    else
+      return path == '/'
+    end
+  end
+
+local function traverse_parents(path, cb)
+  path = vim.loop.fs_realpath(path)
+  local dir = path
+  -- Just in case our algo is buggy, don't infinite loop.
+  for _ = 1, 100 do
+    dir = vim.fs.dirname(dir)
+    if not dir then
+      return
+    end
+    -- If we can't ascend further, then stop looking.
+    if cb(dir, path) then
+      return dir, path
+    end
+    if is_fs_root(dir) then
+      break
+    end
+  end
+end
+
 --- Finds the command in the list of prefixes
 --- Traverse parents until a command is found
 --- Stops at a given parent if a stop_at_marks is found there
@@ -173,7 +202,7 @@ function M.find_cmd_up(cmd, prefixes, start_from, stop_at_marks)
       end
     end
 
-    path.traverse_parents(start_from, function(dir)
+    traverse_parents(start_from, function(dir)
       possibility = path.join(dir, full_cmd)
       if vim.fn.executable(possibility) > 0 then
         found = possibility

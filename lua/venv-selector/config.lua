@@ -8,7 +8,7 @@ M.settings = {}
 -- Default settings if user is not setting anything in setup() call
 M.default_settings = {
   search = true,
-  name = 'venv',
+  name = { 'venv', '.venv' },
   project_mark = ".git",
   auto_activate_parent_venv_on_buf_enter = true,
   auto_activate_parent_venv_on_persisted_load = true,

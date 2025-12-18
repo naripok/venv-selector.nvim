@@ -1,7 +1,7 @@
 local M = {}
 
 local config = require 'venv-selector.config'
-local lsp_utils = require("lspconfig/util")
+local lsp_utils = require 'lspconfig/util'
 local msg_prefix = 'VenvSelect: '
 
 function M.notify(msg)
@@ -150,12 +150,12 @@ end
 local iswin = vim.loop.os_uname().version:match 'Windows'
 
 local function is_fs_root(path)
-    if iswin then
-      return path:match '^%a:$'
-    else
-      return path == '/'
-    end
+  if iswin then
+    return path:match '^%a:$'
+  else
+    return path == '/'
   end
+end
 
 local function traverse_parents(path, cb)
   path = vim.loop.fs_realpath(path)
@@ -184,13 +184,13 @@ end
 function M.find_cmd_up(cmd, prefixes, start_from, stop_at_marks)
   local path = lsp_utils.path
 
-  if type(prefixes) == "string" then
+  if type(prefixes) == 'string' then
     prefixes = { prefixes }
   end
 
   local found
   for _, prefix in ipairs(prefixes) do
-    local full_cmd = prefix and path.join(prefix, path.join("bin", cmd)) or cmd
+    local full_cmd = prefix and path.join(prefix, path.join('bin', cmd)) or cmd
     local possibility
 
     -- if start_from is a dir, test it first since transverse will start from its parent
@@ -210,8 +210,7 @@ function M.find_cmd_up(cmd, prefixes, start_from, stop_at_marks)
       end
       if stop_at_marks then
         for _, mark in ipairs(stop_at_marks) do
-          if path.is_file(path.join(dir, mark))
-            or path.is_dir(path.join(dir, mark)) then
+          if path.is_file(path.join(dir, mark)) or path.is_dir(path.join(dir, mark)) then
             return true
           end
         end

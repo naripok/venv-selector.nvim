@@ -10,7 +10,7 @@ local group = augroup('VenvSelectorGroup', {})
 -- This will automatically update the venv when we navigate buffers
 function M.register_on_buf_enter_autocmd()
   autocmd('BufEnter', {
-    pattern = { '*.py' },
+    pattern = { '*' },
     group = group,
     callback = activate_parent_venv,
   })
@@ -24,7 +24,7 @@ function M.register_on_persisted_load_post_autocmd()
     group = group,
     callback = function()
       autocmd('LspAttach', {
-        pattern = '*.py',
+        pattern = '*',
         group = augroup('VenvSelectorPersistedLoadGroup', { clear = true }),
         callback = activate_parent_venv,
         once = true,
